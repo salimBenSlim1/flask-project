@@ -1,0 +1,7 @@
+target-version = "py312"
+line-length = 100
+exclude = ["frontend", ".venv"]
+
+[lint]
+# pyflakes + core pycodestyle + import sorting + modern-python upgrades
+select = ["E4", "E7", "E9", "F", "I", "UP"]

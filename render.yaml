@@ -1,0 +1,44 @@
+# Render Blueprint: Dashboard -> New -> Blueprint -> pick this repo.
+# Deploys are triggered by GitHub Actions (deploy hook) AFTER tests pass, so auto-deploy is off.
+services:
+  - type: web
+    name: flask-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    region: frankfurt
+    plan: free
+    healthCheckPath: /health
+    autoDeployTrigger: "off"   # quoted on purpose: bare `off` is parsed as boolean false by YAML 1.1
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: flask-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: flask-redis
+          property: connectionString
+      - key: CORS_ORIGINS
+        sync: false            # set in the dashboard (your Vercel URL); not needed if you only use the /api rewrite
+      - key: SEED_ON_START
+        value: "true"          # creates the demo users on boot; set to "false" to disable
+      - key: WEB_CONCURRENCY
+        value: "2"
+
+  - type: keyvalue
+    name: flask-redis
+    region: frankfurt
+    plan: free
+    ipAllowList: []            # empty = reachable only from your other Render services (private network)
+
+databases:
+  - name: flask-db
+    region: frankfurt
+    plan: free
+    databaseName: app
+    user: app
