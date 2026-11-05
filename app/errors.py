@@ -44,6 +44,18 @@ class Conflict(AppError):
     status_code, code, message = 409, "conflict", "Resource already exists"
 
 
+class TooManyRequests(AppError):
+    status_code, code, message = 429, "rate_limited", "Too many requests"
+
+
+class BadGateway(AppError):
+    status_code, code, message = 502, "upstream_error", "An upstream service failed"
+
+
+class ServiceUnavailable(AppError):
+    status_code, code, message = 503, "service_unavailable", "Service unavailable"
+
+
 def _response(status, code, message, details=None):
     body = {
         "error": {
@@ -77,7 +89,11 @@ def register_error_handlers(app):
     def handle_http(err):
         # Flask/Werkzeug's own 404/405/413... -> JSON instead of HTML
         code = (err.name or "error").lower().replace(" ", "_")
-        return _response(err.code, code, err.description)
+        message = err.description
+        if err.code == 413:
+            limit = app.config.get("MAX_UPLOAD_MB", 10)
+            message = f"That file is too large. The limit is {limit} MB."
+        return _response(err.code, code, message)
 
     @app.errorhandler(Exception)
     def handle_unexpected(err):

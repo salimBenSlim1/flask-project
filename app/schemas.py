@@ -46,6 +46,38 @@ class PostCreateSchema(_Base):
     body = fields.Str(required=True, validate=validate.Length(min=1))
 
 
+class HistoryItemSchema(_Base):
+    role = fields.Str(required=True, validate=validate.OneOf(["user", "assistant"]))
+    content = fields.Str(required=True, validate=validate.Length(min=1, max=4000))
+
+
+class AskSchema(_Base):
+    question = fields.Str(
+        required=True,
+        validate=[validate.Length(max=1000), validate.Regexp(r"\S", error="Question can't be empty.")],
+    )
+    history = fields.List(
+        fields.Nested(HistoryItemSchema), load_default=list, validate=validate.Length(max=6)
+    )
+    stream = fields.Bool(load_default=True)
+
+    @post_load
+    def normalize(self, data, **kwargs):
+        data["question"] = data["question"].strip()
+        return data
+
+
+class DocumentOutSchema(_Base):
+    id = fields.Int()
+    filename = fields.Str()
+    size_bytes = fields.Int()
+    status = fields.Str()
+    error = fields.Str(allow_none=True)
+    page_count = fields.Int(allow_none=True)
+    chunk_count = fields.Int(allow_none=True)
+    created_at = fields.DateTime()
+
+
 class UserOutSchema(_Base):
     id = fields.Int()
     name = fields.Str()
@@ -66,3 +98,6 @@ class PostOutSchema(_Base):
 user_out = UserOutSchema()
 post_out = PostOutSchema()
 posts_out = PostOutSchema(many=True)
+
+document_out = DocumentOutSchema()
+documents_out = DocumentOutSchema(many=True)

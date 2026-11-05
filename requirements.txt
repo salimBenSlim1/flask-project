@@ -8,3 +8,15 @@ gunicorn>=21.2
 pytest>=8.0
 psycopg2-binary>=2.9
 redis>=5.0
+
+# --- RAG ---
+langchain-core>=0.3
+langchain-text-splitters>=0.3
+langchain-anthropic>=0.3
+pypdf>=5.0
+pgvector>=0.3
+fastembed>=0.4
+numpy>=1.26
+# Optional embedding providers (set EMBEDDINGS_PROVIDER accordingly):
+#   langchain-voyageai   -> EMBEDDINGS_PROVIDER=voyage
+#   langchain-openai     -> EMBEDDINGS_PROVIDER=openai

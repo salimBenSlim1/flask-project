@@ -21,6 +21,7 @@ up: env ## Build & start EVERYTHING (frontend + api + postgres + redis), seed de
 	@echo ""
 	@echo "  Frontend: http://localhost:$(FRONTEND_PORT)"
 	@echo "  API:      http://localhost:$(API_PORT)/health"
+	@[ -n "$(ANTHROPIC_API_KEY)" ] || echo "\n  Note: set ANTHROPIC_API_KEY in .env, then run make restart s=api, to enable answers."
 
 down: ## Stop containers (keeps data)
 	$(COMPOSE) down

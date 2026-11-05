@@ -33,7 +33,9 @@ export default function AuthPage() {
   return (
     <main className="auth">
       <form className="card" onSubmit={onSubmit} key={mode} noValidate>
-        <h1>{isLogin ? "Welcome back" : "Create account"}</h1>
+        <p className="brand">Marginalia</p>
+        <h1>{isLogin ? "Sign in" : "Create your account"}</h1>
+        <p className="muted tagline">Ask questions about your PDFs and see which pages each answer comes from.</p>
         <ErrorBanner error={error} />
 
         {!isLogin && <Field label="Name" name="name" autoComplete="name" errors={fe.name} />}

@@ -13,6 +13,16 @@ from .middleware.request_context import register_request_hooks
 from .routes import register_blueprints
 
 
+def _enable_pgvector(app: Flask) -> None:
+    if db.engine.dialect.name != "postgresql":
+        return
+    try:
+        with db.engine.begin() as conn:
+            conn.execute(db.text("CREATE EXTENSION IF NOT EXISTS vector"))
+    except Exception:
+        app.logger.exception("Could not enable pgvector. Run `CREATE EXTENSION vector;` as a DB admin.")
+
+
 def create_app(env: str | None = None) -> Flask:
     env = env or os.environ.get("APP_ENV", "development")
     app = Flask(__name__)
@@ -38,6 +48,7 @@ def create_app(env: str | None = None) -> Flask:
     app.extensions["redis"] = Redis.from_url(app.config["REDIS_URL"], socket_connect_timeout=2)
 
     with app.app_context():
+        _enable_pgvector(app)
         db.create_all()  # fine for learning; use Flask-Migrate (Alembic) in real projects
         if app.config["SEED_ON_START"]:
             seed_demo_data()  # idempotent demo users (set SEED_ON_START=false to disable)

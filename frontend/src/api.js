@@ -1,6 +1,9 @@
-// Tiny API client: error normalisation + automatic token refresh.
+// API client: error normalisation, automatic token refresh, multipart upload, SSE streaming.
 // Access token lives in memory only; the refresh token is persisted so a reload keeps you signed in.
-const BASE = "/api";
+//
+// VITE_API_URL (optional): call the backend directly (needed for big uploads/streaming on hosts
+// whose proxies cap bodies or buffer responses). Empty = same-origin /api via proxy/rewrite.
+const BASE = `${(import.meta.env.VITE_API_URL || "").replace(/\/$/, "")}/api`;
 const REFRESH_KEY = "refresh_token";
 
 let accessToken = null;
@@ -36,42 +39,50 @@ function saveSession(data) {
   if (data.refresh_token) store.set(data.refresh_token);
 }
 
-async function send(path, { method = "GET", body, token } = {}) {
+async function rawFetch(path, { method = "GET", json, form, token, signal } = {}) {
   const headers = {};
-  if (body) headers["Content-Type"] = "application/json";
+  let body;
+  if (json !== undefined) {
+    headers["Content-Type"] = "application/json";
+    body = JSON.stringify(json);
+  } else if (form) {
+    body = form; // the browser sets the multipart boundary itself
+  }
   if (token) headers.Authorization = `Bearer ${token}`;
-
-  let res;
   try {
-    res = await fetch(BASE + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
-  } catch {
+    return await fetch(BASE + path, { method, headers, body, signal });
+  } catch (err) {
+    if (err.name === "AbortError") throw err;
     throw new ApiError(0, "network_error", "Cannot reach the server. Please try again.");
   }
+}
 
-  if (res.status === 204) return null;
+async function toError(res) {
   const data = await res.json().catch(() => null); // proxies can return HTML on 502/504
+  const e = data?.error;
+  return new ApiError(res.status, e?.code ?? "unknown_error", e?.message ?? `Server error (${res.status})`, e?.details);
+}
 
-  if (!res.ok) {
-    const e = data?.error;
-    throw new ApiError(res.status, e?.code ?? "unknown_error", e?.message ?? `Server error (${res.status})`, e?.details);
-  }
-  return data;
+async function parse(res) {
+  if (res.status === 204) return null;
+  if (!res.ok) throw await toError(res);
+  return res.json();
 }
 
 export function refreshSession() {
   if (!refreshing) {
-    refreshing = send("/auth/refresh", { method: "POST", body: { refresh_token: store.get() } })
+    refreshing = rawFetch("/auth/refresh", { method: "POST", json: { refresh_token: store.get() } })
+      .then(parse)
       .then(saveSession)
       .finally(() => { refreshing = null; });
   }
   return refreshing;
 }
 
-async function authed(path, opts = {}) {
-  try {
-    return await send(path, { ...opts, token: accessToken });
-  } catch (err) {
-    if (err.status !== 401 || !hasSession()) throw err;
+// Fetch with the access token; on 401 refresh once and retry.
+async function authedResponse(path, opts = {}) {
+  let res = await rawFetch(path, { ...opts, token: accessToken });
+  if (res.status === 401 && hasSession()) {
     try {
       await refreshSession();
     } catch {
@@ -79,23 +90,78 @@ async function authed(path, opts = {}) {
       onSessionExpired();
       throw new ApiError(401, "session_expired", "Your session expired. Please sign in again.");
     }
-    return send(path, { ...opts, token: accessToken }); // retry once with the new token
+    res = await rawFetch(path, { ...opts, token: accessToken });
   }
+  return res;
 }
 
+const authed = async (path, opts) => parse(await authedResponse(path, opts));
+
+// ---- auth ----
 export async function register(payload) {
-  const data = await send("/auth/register", { method: "POST", body: payload });
+  const data = await parse(await rawFetch("/auth/register", { method: "POST", json: payload }));
   saveSession(data);
   return data.user;
 }
 
 export async function login(payload) {
-  const data = await send("/auth/login", { method: "POST", body: payload });
+  const data = await parse(await rawFetch("/auth/login", { method: "POST", json: payload }));
   saveSession(data);
   return data.user;
 }
 
 export const me = async () => (await authed("/auth/me")).user;
-export const listPosts = (page = 1) => send(`/posts?page=${page}&per_page=5`);
-export const createPost = (payload) => authed("/posts", { method: "POST", body: payload });
+
+// ---- posts ----
+export const listPosts = async (page = 1) => parse(await rawFetch(`/posts?page=${page}&per_page=5`));
+export const createPost = (payload) => authed("/posts", { method: "POST", json: payload });
 export const deletePost = (id) => authed(`/posts/${id}`, { method: "DELETE" });
+
+// ---- documents (RAG) ----
+export const listDocuments = async () => (await authed("/documents")).data;
+
+export async function uploadDocument(file) {
+  const form = new FormData();
+  form.append("file", file);
+  return (await authed("/documents", { method: "POST", form })).data;
+}
+
+export const deleteDocument = (id) => authed(`/documents/${id}`, { method: "DELETE" });
+
+// Streams an answer. Server-sent events: `sources` once, many `token`, then `done` (or `error`).
+export async function askStream(docId, { question, history }, { signal, onSources, onToken }) {
+  const res = await authedResponse(`/documents/${docId}/ask`, {
+    method: "POST",
+    json: { question, history, stream: true },
+    signal,
+  });
+  if (!res.ok) throw await toError(res);
+
+  const handle = (raw) => {
+    let event = "message";
+    let data = "";
+    for (const line of raw.split("\n")) {
+      if (line.startsWith("event:")) event = line.slice(6).trim();
+      else if (line.startsWith("data:")) data += line.slice(5).trim();
+    }
+    if (!data) return;
+    const payload = JSON.parse(data);
+    if (event === "sources") onSources(payload);
+    else if (event === "token") onToken(payload.text);
+    else if (event === "error") throw new ApiError(502, payload.code, payload.message);
+  };
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    let end;
+    while ((end = buffer.indexOf("\n\n")) >= 0) {
+      handle(buffer.slice(0, end));
+      buffer = buffer.slice(end + 2);
+    }
+  }
+}

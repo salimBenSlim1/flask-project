@@ -10,10 +10,12 @@
   },
   "dependencies": {
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "@fontsource-variable/newsreader": "^5.2.0",
+    "@fontsource-variable/hanken-grotesk": "^5.2.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",
-    "vite": "^8.3.6"
+    "vite": "^5.4.11"
   }
 }

@@ -28,7 +28,11 @@ services:
       - key: SEED_ON_START
         value: "true"          # creates the demo users on boot; set to "false" to disable
       - key: WEB_CONCURRENCY
-        value: "2"
+        value: "1"             # 512MB free tier: one process (8 threads) keeps the embedding model in memory once
+      - key: ANTHROPIC_API_KEY
+        sync: false            # set in the dashboard
+      - key: EMBEDDINGS_PROVIDER
+        value: fastembed       # or voyage/openai if you hit memory limits (see docs/DEPLOY.md)
 
   - type: keyvalue
     name: flask-redis
