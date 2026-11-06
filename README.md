@@ -10,44 +10,45 @@ Marginalia is a full-stack app for asking questions about PDF documents. Upload 
 - **Local services:** Docker Compose starts the frontend, API, PostgreSQL, and Redis together
 - **Tests:** Pytest backend tests and a production frontend build
 
-## Run locally with Docker
+## Run locally
 
 ### Requirements
 
 - [Git](https://git-scm.com/)
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) with Docker Compose enabled
+- [GNU Make](https://www.gnu.org/software/make/)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) with Docker Compose enabled. You will use the Make commands below; Make runs Docker Compose for you.
 - A [Groq API key](https://console.groq.com/keys) to generate AI answers. The app can start without one, but asking questions will require it.
 
-### 1. Clone the repository
+On Windows, run these commands from a terminal with `make` available (for example, WSL or a Unix-compatible development environment).
+
+### 1. Clone the repository and enter its folder
 
 ```powershell
 git clone https://github.com/salimBenSlim1/flask-project.git
 cd flask-project
 ```
 
-### 2. Create your local environment file
+### 2. Create and configure `.env`
 
-In PowerShell:
+From the project root:
 
-```powershell
-Copy-Item .env.example .env
-notepad .env
+```sh
+make env
 ```
 
-Set `ANTHROPIC_API_KEY` to your **Groq** API key and keep `ANTHROPIC_MODEL=openai/gpt-oss-20b`, or use another model supported by your Groq account. The `ANTHROPIC_*` names are retained for compatibility with the existing Render environment; they configure Groq in this project. Never commit `.env` or paste API keys into source files.
+Open the generated `.env` file in your editor. Set `ANTHROPIC_API_KEY` to your **Groq** API key and keep `ANTHROPIC_MODEL=openai/gpt-oss-20b`, or use another model supported by your Groq account. The `ANTHROPIC_*` names are retained for compatibility with the existing Render environment; they configure Groq in this project. Never commit `.env` or paste API keys into source files.
 
 The default embedding provider is local FastEmbed, so it does not need another API key.
 
-### 3. Start the app
+### 3. Start everything
 
-Make sure Docker Desktop is running, then run:
+Start Docker Desktop, then from the project root run:
 
-```powershell
-docker compose up -d --build --wait
-docker compose exec api flask --app run seed
+```sh
+make up
 ```
 
-The first build may take a few minutes while dependencies and the local embedding model are downloaded.
+`make up` builds and starts the frontend, Flask API, PostgreSQL, and Redis, waits for them to become healthy, and seeds the demo users. The first run may take a few minutes while dependencies and the local embedding model are downloaded.
 
 Open:
 
@@ -56,14 +57,15 @@ Open:
 
 For the seeded local demo, sign in with `alice@example.com` / `Alice1234!`.
 
-### Stop or inspect the app
+### Common commands
 
-```powershell
-docker compose logs -f
-docker compose down
+```sh
+make logs
+make down
+make test
 ```
 
-`docker compose down` keeps the database volumes. To delete the local database and Redis data too, run `docker compose down -v`—this is destructive and cannot be undone.
+`make down` stops the app but keeps database data. `make test` runs the backend tests without Docker. `make help` lists the available targets. `make reset` deletes the local database and Redis data before starting over; this is destructive and cannot be undone.
 
 ## Run tests
 
