@@ -25,7 +25,9 @@ image, and builds the frontend. On push to `main`, only if all of that passed: d
 - Schema changes: add Flask-Migrate and run migrations via `preDeployCommand` in `render.yaml`.
 
 ## RAG settings (Marginalia)
-- **`ANTHROPIC_API_KEY`** is required to answer questions (Render: set it on the service; Docker: put it in `.env`).
+- **Groq** is used to answer questions. Set `ANTHROPIC_API_KEY` to your Groq API key and
+  `ANTHROPIC_MODEL` to the Groq model name (for example, `openai/gpt-oss-20b`) on Render.
+  The existing variable names are retained so the current Render environment does not need renaming.
 - **Embeddings** default to a local model (`fastembed`, no key). It needs ~300 MB of RAM, which is tight on
   Render's free 512 MB tier. If you hit memory limits, use an API provider: `pip install langchain-voyageai`
   (or `langchain-openai`), set `EMBEDDINGS_PROVIDER=voyage|openai`, `EMBEDDING_MODEL`, the provider's API key,

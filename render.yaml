@@ -29,6 +29,7 @@ services:
         value: "true"          # creates the demo users on boot; set to "false" to disable
       - key: WEB_CONCURRENCY
         value: "1"             # 512MB free tier: one process (8 threads) keeps the embedding model in memory once
+      # Existing variable name is retained for compatibility; provide the Groq API key here.
       - key: ANTHROPIC_API_KEY
         sync: false            # set in the dashboard
       - key: EMBEDDINGS_PROVIDER

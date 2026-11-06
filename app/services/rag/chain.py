@@ -1,9 +1,9 @@
 """The generation half of RAG: prompt | model | parser (LangChain LCEL)."""
 from flask import current_app
-from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_groq import ChatGroq
 
 from ...errors import ServiceUnavailable
 from .retrieval import Passage
@@ -29,10 +29,10 @@ def get_chat_model():
     cfg = current_app.config
     if not cfg.get("ANTHROPIC_API_KEY"):
         raise ServiceUnavailable(
-            "The AI model isn't configured on the server (missing ANTHROPIC_API_KEY).",
+            "The Groq model isn't configured on the server (missing ANTHROPIC_API_KEY).",
             code="llm_not_configured",
         )
-    return ChatAnthropic(
+    return ChatGroq(
         model=cfg["ANTHROPIC_MODEL"],
         api_key=cfg["ANTHROPIC_API_KEY"],
         temperature=0.2,

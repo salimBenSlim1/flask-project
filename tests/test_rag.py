@@ -166,6 +166,26 @@ def test_missing_api_key_is_a_clear_503(client, app, alice):
     res = client.post(f"/api/documents/{doc_id}/ask", json={"question": "rent?"}, headers=alice)
     assert res.status_code == 503 and res.get_json()["error"]["code"] == "llm_not_configured"
 
+def test_chat_model_uses_groq_with_existing_render_settings(app, monkeypatch):
+    from app.services.rag import chain
+
+    captured = {}
+
+    class FakeChatGroq:
+        def __init__(self, **kwargs):
+            captured.update(kwargs)
+
+    monkeypatch.setattr(chain, "ChatGroq", FakeChatGroq)
+    app.config["ANTHROPIC_API_KEY"] = "groq-test-key"
+    app.config["ANTHROPIC_MODEL"] = "openai/gpt-oss-20b"
+
+    with app.app_context():
+        model = chain.get_chat_model()
+
+    assert isinstance(model, FakeChatGroq)
+    assert captured["api_key"] == "groq-test-key"
+    assert captured["model"] == "openai/gpt-oss-20b"
+
 
 def test_llm_failure_is_a_502_not_a_stack_trace(client, alice, monkeypatch):
     def boom(_):

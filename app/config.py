@@ -32,8 +32,9 @@ class Config:
     JSON_SORT_KEYS = False
 
     # --- RAG ---
+    # Keep these variable names for the existing Render environment; their values configure Groq.
     ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
-    ANTHROPIC_MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-5-5")
+    ANTHROPIC_MODEL = os.environ.get("ANTHROPIC_MODEL", "openai/gpt-oss-20b")
     EMBEDDINGS_PROVIDER = os.environ.get("EMBEDDINGS_PROVIDER", "fastembed")  # fastembed|voyage|openai|hashing
     EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "BAAI/bge-small-en-v1.5")
     EMBEDDING_DIM = EMBEDDING_DIM
