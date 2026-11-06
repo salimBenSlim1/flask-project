@@ -10,7 +10,8 @@ image, and builds the frontend. On push to `main`, only if all of that passed: d
 2. **Vercel** (do NOT import the repo via Git, the pipeline deploys):
    `cd frontend && npx vercel link` → creates the project and `.vercel/project.json` (orgId, projectId).
    Create a token at vercel.com/account/tokens.
-3. Edit `frontend/vercel.json`: replace `YOUR-SERVICE.onrender.com` with your Render URL.
+3. Set the `/api` rewrite in `frontend/vercel.json` to your Render service URL
+   (currently `https://flask-api-wksi.onrender.com`).
 4. **GitHub** → Settings → Environments → `production` → add secrets:
    `RENDER_DEPLOY_HOOK_URL`, `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`.
    (Optional: add required reviewers there for manual approval.)

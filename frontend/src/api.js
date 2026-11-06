@@ -63,10 +63,22 @@ async function toError(res) {
   return new ApiError(res.status, e?.code ?? "unknown_error", e?.message ?? `Server error (${res.status})`, e?.details);
 }
 
+async function toJson(res) {
+  const body = await res.text();
+  if (!body.trim()) {
+    throw new ApiError(res.status, "empty_response", "The server returned an empty response. Please try again.");
+  }
+  try {
+    return JSON.parse(body);
+  } catch {
+    throw new ApiError(res.status, "invalid_response", "The server returned an invalid response. Please try again.");
+  }
+}
+
 async function parse(res) {
   if (res.status === 204) return null;
   if (!res.ok) throw await toError(res);
-  return res.json();
+  return toJson(res);
 }
 
 export function refreshSession() {
