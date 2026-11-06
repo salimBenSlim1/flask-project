@@ -52,6 +52,63 @@ def test_upload_ingests_and_lists(client, alice):
     assert client.get("/api/documents", headers=alice).get_json()["data"][0]["id"] == doc["id"]
 
 
+@pytest.mark.parametrize(
+    ("provider", "expected_batches"),
+    [("fastembed", [180]), ("voyage", [64, 64, 52])],
+)
+def test_ingestion_batches_embeddings_and_bulk_saves_chunks(
+    client, app, alice, monkeypatch, provider, expected_batches
+):
+    from app.extensions import db
+    from app.models import Chunk
+
+    class RecordingEmbeddings:
+        def __init__(self):
+            self.batches = []
+
+        def embed_documents(self, texts):
+            self.batches.append(texts)
+            return [[0.0] * 384 for _ in texts]
+
+    embeddings = RecordingEmbeddings()
+    app.config["EMBEDDINGS_PROVIDER"] = provider
+    monkeypatch.setattr("app.services.rag.ingestion.get_embeddings", lambda: embeddings)
+
+    response = upload(client, alice, PAGES * 60)
+    document = response.get_json()["data"]
+
+    assert response.status_code == 202
+    assert document["status"] == "ready"
+    assert document["chunk_count"] == 180
+    assert [len(batch) for batch in embeddings.batches] == expected_batches
+    with app.app_context():
+        assert db.session.scalar(
+            db.select(db.func.count(Chunk.id)).where(Chunk.document_id == document["id"])
+        ) == 180
+
+
+def test_incomplete_embeddings_fail_without_saving_partial_chunks(client, app, alice, monkeypatch):
+    from app.extensions import db
+    from app.models import Chunk
+
+    class IncompleteEmbeddings:
+        def embed_documents(self, texts):
+            return []
+
+    monkeypatch.setattr("app.services.rag.ingestion.get_embeddings", lambda: IncompleteEmbeddings())
+
+    response = upload(client, alice, PAGES[:1])
+    document = response.get_json()["data"]
+
+    assert response.status_code == 202
+    assert document["status"] == "failed"
+    assert "0 vectors for 1 passages" in document["error"]
+    with app.app_context():
+        assert db.session.scalar(
+            db.select(db.func.count(Chunk.id)).where(Chunk.document_id == document["id"])
+        ) == 0
+
+
 def test_rejects_non_pdf_and_missing_file(client, alice):
     res = client.post(
         "/api/documents",
