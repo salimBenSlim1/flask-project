@@ -28,7 +28,7 @@ services:
       retries: 20
 
   api:
-    build: .
+    build: ./backend
     env_file: .env
     environment:
       # Override host-style URLs from .env with in-network service names

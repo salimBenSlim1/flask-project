@@ -43,14 +43,13 @@ infra: env ## Start only postgres + redis (for running Flask on your host)
 	$(COMPOSE) up -d --wait db redis
 
 dev: infra ## Run Flask on your host with auto-reload (needs pip install); pair with `make front`
-	flask --app run seed
-	flask --app run run --debug --port $(API_PORT)
+	cd backend && flask --app run seed && flask --app run run --debug --port $(API_PORT)
 
 front: ## Run the Vite dev server with hot reload on :3000 (proxies /api to Flask)
 	cd frontend && npm install && npm run dev
 
 test: ## Run the backend test suite (in-memory SQLite, no Docker needed)
-	python -m pytest -q
+	cd backend && python -m pytest -q
 
 psql: ## Open a psql shell in the db container
 	$(COMPOSE) exec db psql -U $(POSTGRES_USER) -d $(POSTGRES_DB)
