@@ -16,7 +16,7 @@ langchain-groq>=0.3
 pypdf>=5.0
 pgvector>=0.3
 fastembed>=0.4
-numpy>=1.26
+numpy>=2.5.4
 # Optional embedding providers (set EMBEDDINGS_PROVIDER accordingly):
 #   langchain-voyageai   -> EMBEDDINGS_PROVIDER=voyage
 #   langchain-openai     -> EMBEDDINGS_PROVIDER=openai
