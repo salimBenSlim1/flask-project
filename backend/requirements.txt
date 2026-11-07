@@ -14,7 +14,7 @@ langchain-core>=0.3
 langchain-text-splitters>=0.3
 langchain-groq>=0.3
 pypdf>=5.0
-pgvector>=0.3
+pgvector>=0.5.1
 fastembed>=0.4
 numpy>=1.26
 # Optional embedding providers (set EMBEDDINGS_PROVIDER accordingly):
