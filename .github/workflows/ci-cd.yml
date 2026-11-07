@@ -29,8 +29,7 @@ jobs:
       - run: pytest -q
         working-directory: backend
       # Catch Dockerfile problems here instead of on Render
-      - run: docker build -t flask-api:ci .
-        working-directory: backend
+      - run: docker build -f backend/Dockerfile -t flask-api:ci .
 
   frontend:
     name: Frontend (build)

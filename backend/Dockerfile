@@ -8,10 +8,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /srv
 
 # Copy requirements first so this layer is cached until dependencies change
-COPY requirements.txt .
+COPY backend/requirements.txt .
 RUN pip install -r requirements.txt
 
-COPY . .
+COPY backend/ .
 
 # Bake the local embedding model into the image so cold starts don't download it.
 # Harmless to skip: if this fails (offline build) the model downloads on first use instead.

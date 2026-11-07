@@ -5,8 +5,9 @@ deployments. The optional workflow (`.github/workflows/ci-cd.yml`) runs backend 
 when manually started.
 
 ## One-time setup
-1. **Render**: Connect this repo as a Blueprint using `render.yaml`. The API's Docker root is `backend/`.
-   Sync the Blueprint to apply `autoDeployTrigger: commit` and deploy commits from the connected branch.
+1. **Render**: Connect this repo as a Blueprint using `render.yaml`. The Docker build context is the
+   repository root so commits across the repo trigger an auto-deploy. Sync the Blueprint to apply
+   `autoDeployTrigger: commit`.
 2. **Vercel**: Connect the project to this repo and set its production branch to `master`.
 3. Set the `/api` rewrite in `frontend/vercel.json` to your Render service URL
    (currently `https://flask-api-wksi.onrender.com`).
