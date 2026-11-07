@@ -7,7 +7,7 @@ python-dotenv>=1.0
 gunicorn>=21.2
 pytest>=8.0
 psycopg2-binary>=2.9
-redis>=5.0
+redis>=8.1.0
 
 # --- RAG ---
 langchain-core>=0.3
