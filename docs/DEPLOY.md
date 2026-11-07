@@ -1,23 +1,16 @@
-# Deployment (GitHub Actions → Render + Vercel)
+# Deployment (Git integration → Render + Vercel)
 
-Pipeline (`.github/workflows/ci-cd.yml`): on every push/PR it lints + tests the backend, builds the Docker
-image, and builds the frontend. On push to `master`, only if all of that passed: deploy backend (Render)
-→ deploy frontend (Vercel). PRs run checks only.
+Vercel and Render deploy directly from GitHub on pushes to `master`; GitHub Actions is not required for
+deployments. The optional workflow (`.github/workflows/ci-cd.yml`) runs backend and frontend checks only
+when manually started.
 
 ## One-time setup
-1. **Render**: New → Blueprint → select this repo (`render.yaml`). The API's Docker root is `backend/`.
-   Wait for the first deploy.
-   Then Service → Settings → **Deploy Hook** → copy the URL.
-2. **Vercel** (do NOT import the repo via Git, the pipeline deploys):
-   `cd frontend && npx vercel link` → creates the project and `.vercel/project.json` (orgId, projectId).
-   Create a token at vercel.com/account/tokens.
+1. **Render**: Connect this repo as a Blueprint using `render.yaml`. The API's Docker root is `backend/`.
+   Sync the Blueprint to apply `autoDeployTrigger: commit` and deploy commits from the connected branch.
+2. **Vercel**: Connect the project to this repo and set its production branch to `master`.
 3. Set the `/api` rewrite in `frontend/vercel.json` to your Render service URL
    (currently `https://flask-api-wksi.onrender.com`).
-4. **GitHub** → Settings → Environments → `production` → add secrets:
-   `RENDER_DEPLOY_HOOK_URL`, `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`.
-   (Optional: add required reviewers there for manual approval.)
-5. **GitHub** → Settings → Branches → protect `master`: require PR + the `backend` and `frontend` checks.
-6. Push to `master`.
+4. On each push to `master`, both providers build and deploy independently of GitHub Actions.
 
 ## Notes
 - Free Render web services sleep when idle (slow first request); free Postgres/Key Value have

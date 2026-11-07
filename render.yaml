@@ -1,5 +1,4 @@
 # Render Blueprint: Dashboard -> New -> Blueprint -> pick this repo.
-# Deploys are triggered by GitHub Actions (deploy hook) AFTER tests pass, so auto-deploy is off.
 services:
   - type: web
     name: flask-api
@@ -9,7 +8,7 @@ services:
     region: frankfurt
     plan: free
     healthCheckPath: /health
-    autoDeployTrigger: "off"   # quoted on purpose: bare `off` is parsed as boolean false by YAML 1.1
+    autoDeployTrigger: commit
     envVars:
       - key: APP_ENV
         value: production
