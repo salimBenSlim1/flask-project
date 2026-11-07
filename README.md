@@ -116,7 +116,7 @@ npm run build
    git push -u origin HEAD
    ```
 
-This project’s GitHub Actions workflow currently listens for pushes to `master`. Keep that branch name for the existing workflow, or update the branch filters in `.github/workflows/ci-cd.yml` if you choose a different default branch. Before pushing, verify that `.env` is ignored and that no API keys or other secrets are staged.
+The GitHub Actions workflow (`.github/workflows/ci-cd.yml`) listens for pushes and pull requests targeting `master`. Keep that branch name or update its branch filters if you choose a different default branch. Production deploys run on successful pushes to `master`; configure the required GitHub Actions secrets as described in [docs/DEPLOY.md](docs/DEPLOY.md). Before pushing, verify that `.env` is ignored and that no API keys or other secrets are staged.
 
 ## Deployment
 
